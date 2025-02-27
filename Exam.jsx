@@ -12,7 +12,6 @@ const Exam = () => {
   const { selectedChildId } = useChild();
   const [examData, setExamData] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (!selectedChildId) return;
 
@@ -24,7 +23,7 @@ const Exam = () => {
         const filteredExams = response.data.data.filter(exam => 
           exam.status === true && 
           exam.examSubmittedStatus === false 
-          // && new Date(exam.startDate) >= new Date()
+          && (new Date(exam.startDate) >= new Date() || new Date(exam.endDate) >= new Date())
         );
         setExamData(filteredExams);
       } catch (error) {
