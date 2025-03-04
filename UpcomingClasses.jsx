@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { clockSvg, studentSvg, calanderSvg } from "../../Constant/svgs";
+import { calanderSvg } from "../../Constant/svgs";
 import { CalendarCheck2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getRequest } from "../../services";
@@ -41,7 +41,7 @@ const UpcomingClasses = () => {
         classData.map((classItem) => (
           <div className="row" key={classItem.classId}>
             {classItem.subjects.map((subject) => (
-              <div className="col-lg-4 col-md-6 mt-2" key={subject.id}>
+              <div className="col-xl-4 col-lg-6 mt-2" key={subject.id}>
                 <div className="d-flex flex-column align-items-between bg-white examDataWrapper px-2 py-3 borderRadius_15 my-3">
                   <h6 className="heading-class fw-bold mt-2 text-white">{subject.subjectName}</h6>
                   <div className="d-flex justify-content-start gap-3 examChipsWrapper mt-3 px-2 ">

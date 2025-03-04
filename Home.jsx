@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import CoursesList from "../Components/Home/CoursesList";
 import TaskNotifications from "../Components/Home/TaskNotifications";
+import TaskNotificationsChild from "../Components/parent/TaskNotificationChild";
 import { Pagination } from "antd";
 import ClassView from "../Components/Teacher/ClassView";
 import QuickMessages from "../Components/Teacher/QuickMessages";
@@ -155,7 +156,7 @@ const Home = () => {
               <div className="col-12 col-lg-4  p-0  px-lg-3">
                 <div className="taskListView shadow">
                   <h4 className="mb-4">{t('Tasks')}</h4>
-                  <TaskNotifications />
+                  <TaskNotificationsChild />
                 </div>
               </div>
             </div>

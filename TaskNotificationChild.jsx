@@ -9,14 +9,16 @@ import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 const EntrollCourseTiles = () => {
   const [examData, setExamData] = useState([]);
   const [classData, setClassData] = useState([]);
+  const [childData, setChildData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0); // Current page for pagination
-  const itemsPerPage = 4; // Items per page
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 4;
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const isArabic = i18n.language;
   const auth = JSON.parse(localStorage.getItem("user"));
-  const user = auth.user;
+  const user = auth.userId;
+
   const handleClick = (type) => {
     if (type === "class") {
       navigate("/class-management");
@@ -34,54 +36,78 @@ const EntrollCourseTiles = () => {
   };
 
   useEffect(() => {
-    const fetchDataExam = async (endPointApi) => {
+    const fetchDataExam = async (childId, childName) => {
       setLoading(true);
       try {
-        const response = await getRequest(endPointApi);
-        setExamData(response.data.data);
+        const response = await getRequest(`/api/Exam/students-all-exams-by-id?userId=${childId}`);
+        return response.data.data.map(exam => ({...exam, childName}));
       } catch (error) {
         console.error("Error fetching exam data:", error.message);
-      } finally {
-        setLoading(false);
+        return [];
       }
     };
 
-    const fetchDataClass = async () => {
-      setLoading(true);
+    const fetchDataClass = async (childId, childName) => {
       try {
-        const response = await getRequest(`/api/ClassAssignment/MyClasses`);
-        setClassData(response.data.data);
+        const response = await getRequest(`/api/ClassAssignment/ChildClassesById?userId=${childId}`);
+        return response.data.data.map(classItem => ({...classItem, childName}));
       } catch (error) {
         console.error("Error fetching class data:", error.message);
+        return [];
+      }
+    };
+
+    const fetchDataChild = async () => {
+      setLoading(true);
+      try {
+        const response = await getRequest(`/api/Parent/${user}`);
+        const children = response.data.data.childerns;
+        setChildData(children);
+
+        const allExamData = [];
+        const allClassData = [];
+        
+        for (let child of children) {
+          const [examResults, classResults] = await Promise.all([
+            fetchDataExam(child.id, child.name),
+            fetchDataClass(child.id, child.name)
+          ]);
+          
+          allExamData.push(...examResults);
+          allClassData.push(...classResults);
+        }
+
+        setExamData(allExamData);
+        setClassData(allClassData);
+      } catch (error) {
+        console.error("Error fetching child data:", error.message);
       } finally {
         setLoading(false);
       }
     };
 
-      const endPointApi = user === "teacher"
-      ? `/api/Exam/exams`
-      : `/api/Exam/students-all-exams`;
+    fetchDataChild();
 
-      fetchDataExam(endPointApi);
-      fetchDataClass();
-    
-
-  }, []);
+  }, [user]);
 
   const currentDay = new Date().toLocaleDateString("en-US", { weekday: "long" });
   const currentDate = new Date().toISOString().split("T")[0];
   
   const myTasks = [
     ...examData
-      .filter((exam) =>
-        new Date(currentDate) <= new Date(exam.endDate) // Include exams until their end date
-      )
+      .filter((exam) => {
+        const examDate = new Date(exam.startDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return examDate >= today;
+      })
       .map((exam) => ({
         type: "exam",
         subjectName: exam.subjectDetails.subjectName,
         timeLine: `${exam.startTime} - ${exam.endTime}`,
         taskType: exam.examType,
         status: exam.status,
+        childName: exam.childName,
         day: new Date(exam.startDate).toLocaleDateString("en-US", { weekday: "long" }),
         date: new Date(exam.startDate).toLocaleDateString()
       })),
@@ -93,18 +119,18 @@ const EntrollCourseTiles = () => {
             type: "class",
             subjectName: subject.subjectName,
             timeLine: `${schedule.startTime} - ${schedule.endTime}`,
+            childName: classItem.childName,
             day: schedule.day
           }))
       )
     )
   ];
 
-  // Pagination logic: slice tasks based on current page
   const paginatedTasks = myTasks.slice(
     currentPage * itemsPerPage,
     (currentPage + 1) * itemsPerPage
   );
-  console.log(myTasks);
+
   return (
     <Spin spinning={loading}>
       <div className="myTaskHeight">
@@ -133,7 +159,7 @@ const EntrollCourseTiles = () => {
                 onClick={() => handleClick(item.type)}
               >
                 <h6>
-                  {item.subjectName}{" "}
+                  {item.childName} - {item.subjectName}{" "}
                   {item.type === "exam" && <strong>{item.taskType}</strong>}
                 </h6>
                 <p>{item.day} {item.type === "exam" && `(${item.date})`}</p>
@@ -153,7 +179,6 @@ const EntrollCourseTiles = () => {
         )}
       </div>
 
-      {/* Pagination Controls */}
       {paginatedTasks.length > 0 ? (
         <div className="flex justify-center mt-4 paginationStyle">
           <button
@@ -180,9 +205,7 @@ const EntrollCourseTiles = () => {
             <RightOutlined />
           </button>
         </div>
-      ) : (
-        null
-      )}
+      ) : null}
     </Spin>
   );
 };
