@@ -12,7 +12,7 @@ const EntrollCourseTiles = () => {
   const [childData, setChildData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 4;
+  const itemsPerPage = 3;
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const isArabic = i18n.language;
