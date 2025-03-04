@@ -11,7 +11,7 @@ const EntrollCourseTiles = () => {
   const [classData, setClassData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0); // Current page for pagination
-  const itemsPerPage = 4; // Items per page
+  const itemsPerPage = 3; // Items per page
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const isArabic = i18n.language;
