@@ -3,15 +3,13 @@ import { meachineicon, quizicon, taskicons } from "../../Constant/svgs";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { getRequest } from "../../services";
-import { Spin } from "antd";
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { Spin, Pagination } from "antd";
 
-const EntrollCourseTiles = () => {
+const TaskNotificationChild = () => {
   const [examData, setExamData] = useState([]);
   const [classData, setClassData] = useState([]);
-  const [childData, setChildData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1); // Changed to 1-based for antd pagination
   const itemsPerPage = 3;
   const navigate = useNavigate();
   const { i18n } = useTranslation();
@@ -24,14 +22,6 @@ const EntrollCourseTiles = () => {
       navigate("/class-management");
     } else {
       navigate("/exams-management");
-    }
-  };
-
-  const handlePagination = (direction) => {
-    if (direction === "next") {
-      setCurrentPage((prev) => prev + 1);
-    } else if (direction === "previous") {
-      setCurrentPage((prev) => Math.max(prev - 1, 0));
     }
   };
 
@@ -62,7 +52,6 @@ const EntrollCourseTiles = () => {
       try {
         const response = await getRequest(`/api/Parent/${user}`);
         const children = response.data.data.childerns;
-        setChildData(children);
 
         const allExamData = [];
         const allClassData = [];
@@ -91,7 +80,6 @@ const EntrollCourseTiles = () => {
   }, [user]);
 
   const currentDay = new Date().toLocaleDateString("en-US", { weekday: "long" });
-  const currentDate = new Date().toISOString().split("T")[0];
   
   const myTasks = [
     ...examData
@@ -127,8 +115,8 @@ const EntrollCourseTiles = () => {
   ];
 
   const paginatedTasks = myTasks.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   return (
@@ -179,35 +167,19 @@ const EntrollCourseTiles = () => {
         )}
       </div>
 
-      {paginatedTasks.length > 0 ? (
-        <div className="flex justify-center mt-4 paginationStyle">
-          <button
-            onClick={() => handlePagination("previous")}
-            disabled={currentPage < 1}
-            className={`px-3 py-1 bg-[#241763] text-white rounded ${currentPage < 1
-              ? "bg-gray-300 cursor-not-allowed"
-              : "bg-[#241763] text-white hover:bg-[#241763]"
-              }`}
-          >
-            <LeftOutlined />
-          </button>
-          <span className="bg-[#241763] text-white px-3 py-1 mx-1 border rounded d-flex align-items-center">
-            {`${currentPage + 1}/${Math.ceil(myTasks.length / itemsPerPage)}`}
-          </span>
-          <button
-            onClick={() => handlePagination("next")}
-            disabled={currentPage >= Math.ceil(myTasks.length / itemsPerPage) - 1}
-            className={`px-4 py-2 rounded ${currentPage >= Math.ceil(myTasks.length / itemsPerPage) - 1
-              ? "bg-gray-300 cursor-not-allowed"
-              : "bg-[#241763] text-white hover:bg-[#241763]"
-              }`}
-          >
-            <RightOutlined />
-          </button>
+      {myTasks.length > 0 && (
+        <div className="flex justify-center mt-4">
+          <Pagination
+            current={currentPage}
+            total={myTasks.length}
+            pageSize={itemsPerPage}
+            onChange={(page) => setCurrentPage(page)}
+            showSizeChanger={false}
+          />
         </div>
-      ) : null}
+      )}
     </Spin>
   );
 };
 
-export default EntrollCourseTiles;
+export default TaskNotificationChild;
