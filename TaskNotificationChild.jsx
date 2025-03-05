@@ -87,7 +87,7 @@ const TaskNotificationChild = () => {
         const examDate = new Date(exam.startDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        return examDate >= today;
+        return examDate >= today && exam.status === true; // Added status filter
       })
       .map((exam) => ({
         type: "exam",
@@ -121,7 +121,7 @@ const TaskNotificationChild = () => {
 
   return (
     <Spin spinning={loading}>
-      <div className="myTaskHeight">
+      <div className="myTaskHeightParents">
         {paginatedTasks.length > 0 ? (
           paginatedTasks.map((item, index) => (
             <div

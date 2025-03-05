@@ -10,12 +10,18 @@ const TaskNotification = () => {
   const [classData, setClassData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1); // Changed to 1-based for antd pagination
-  const itemsPerPage = 3;
+  let itemsPerPage = 0;
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const isArabic = i18n.language;
   const auth = JSON.parse(localStorage.getItem("user"));
   const user = auth.user;
+  if(user === "student"){
+    itemsPerPage = 6;
+  }
+  else{
+    itemsPerPage = 4;
+  }
   const handleClick = (type) => {
     if (type === "class") {
       navigate("/class-management");
@@ -98,7 +104,7 @@ const TaskNotification = () => {
 
   return (
     <Spin spinning={loading}>
-      <div className="myTaskHeight">
+      <div className={`${user === "student" ? "myTaskHeightStudent" : "myTaskHeight"}`}>
         {paginatedTasks.length > 0 ? (
           paginatedTasks.map((item, index) => (
             <div
