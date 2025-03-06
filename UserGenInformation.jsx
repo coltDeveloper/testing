@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { getRequest, updateRequest } from "../services";
+import { getRequest, updateRequest, postRequest } from "../services";
 import { userAvatar } from "../Constant/images";
 import { pencilSvg } from "../Constant/svgs";
 import UserMeta from "../Components/Common/UserMeta";
+import UserMetaParent from "../Components/Common/UserMetaParent";
 import ClassDetails from "./ClassesDetails";
 import ChangePassword from "./ChangePassword";
 import { DatePicker, message, Spin } from "antd";
@@ -17,7 +18,6 @@ const UserGenInfoTeacher = () => {
     email: "",
     phone: "",
     location: "",
-    address: "",
     cnic: "",
     salary: "",
     dob: "",
@@ -27,6 +27,7 @@ const UserGenInfoTeacher = () => {
   const [loading, setLoading] = useState(false);
   const auth = JSON.parse(localStorage.getItem("user"));
   const [avatar, setAvatar] = useState(userAvatar);
+  const [imageFile, setImageFile] = useState(null);
 
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language;
@@ -45,7 +46,6 @@ const UserGenInfoTeacher = () => {
           email: data.email || "",
           phone: data.phone || "",
           location: data.location || "",
-          address: data.address || "",
           cnic: data.cnic || "",
           salary: data.salary || "",
           dob: data.dob || "",
@@ -71,6 +71,7 @@ const UserGenInfoTeacher = () => {
   const handleImageChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatar(reader.result);
@@ -89,27 +90,42 @@ const UserGenInfoTeacher = () => {
   };
 
   const isFormChanged = () => {
-    return JSON.stringify(genInfo) !== JSON.stringify(initialGenInfo);
+    return JSON.stringify(genInfo) !== JSON.stringify(initialGenInfo) || imageFile !== null;
   };
 
   const handleSubmit = async () => {
     setLoading(true);
-    const formData = new FormData();
-    formData.append('FirstName', genInfo.firstName);
-    formData.append('LastName', genInfo.lastName);
-    formData.append('Email', genInfo.email);
-    formData.append('Gender', 'Male');
-    formData.append('Phone', genInfo.phone);
-    formData.append('Location', genInfo.location);
-    formData.append('Address', genInfo.address);
-    formData.append('CNIC', genInfo.cnic);
-    formData.append('DOB', genInfo.dob);
-
     try {
+      let profilePictureUrl = null;
+
+      // Upload image if changed
+      if (imageFile) {
+        const imageFormData = new FormData();
+        imageFormData.append("files", imageFile);
+        const imageResponse = await postRequest("/api/Document/documents-upload", imageFormData, true);
+        profilePictureUrl = imageResponse?.data;
+      }
+
+      const formData = new FormData();
+      formData.append('FirstName', genInfo.firstName);
+      formData.append('LastName', genInfo.lastName);
+      formData.append('Email', genInfo.email);
+      formData.append('Gender', 'Male');
+      formData.append('Phone', genInfo.phone);
+      formData.append('Location', genInfo.location);
+      formData.append('CNIC', genInfo.cnic);
+      formData.append('DOB', genInfo.dob);
+      
+      // Only append profile picture if it was changed
+      if (profilePictureUrl) {
+        formData.append('ProfilePicture', profilePictureUrl);
+      }
+
       const response = await updateRequest('/api/User/UpdateParent', formData, true);
       if(response.status === 200) {
         message.success("Successfully updated user info");
         setInitialGenInfo(genInfo);
+        setImageFile(null);
       }
     } catch (error) {
       console.error("Error updating user info:", error.message);
@@ -146,7 +162,7 @@ const UserGenInfoTeacher = () => {
             <h4 className="fw-bold fs-6">{`${genInfo.firstName} ${genInfo.lastName}`}</h4>
             <h6 className="text-secondary">{t(auth.user)}</h6>
           </div>
-          <UserMeta />
+          {auth.user !== "parent" ? <UserMeta /> : <UserMetaParent userId={auth.userId}/>}
         </div>
       </div>
       <div className="col-md-8">
@@ -257,35 +273,17 @@ const UserGenInfoTeacher = () => {
                 </div>
               </div>
 
-
-              <div className={`col-md-6 ${isArabic === "sa" ? 'text-end' : 'text-start'}`}>
-                <label htmlFor="location" className="form-label">
-                  {t("City")}
-                </label>
-                <div className="mb-3">
-                  <input
-                    type="text"
-                    placeholder="City"
-                    className={`form-control ${isArabic === "sa" ? 'text-end' : 'text-start'}`}
-                    name="location"
-                    onChange={handleChange}
-                    value={genInfo.location}
-                    required
-                  />
-                </div>
-              </div>
-
               <div className={`col-md-12 ${isArabic === "sa" ? 'text-end' : 'text-start'}`}>
-                <label htmlFor="address" className="form-label">
+                <label htmlFor="location" className="form-label">
                   {t("Address")}
                 </label>
                 <div className="mb-3">
                   <textarea
                     placeholder="Address"
                     className={`form-control ${isArabic === "sa" ? 'text-end' : 'text-start'}`}
-                    name="address"
+                    name="location"
                     onChange={handleChange}
-                    value={genInfo.address}
+                    value={genInfo.location}
                   />
                 </div>
               </div>
