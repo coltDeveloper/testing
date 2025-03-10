@@ -1,12 +1,1 @@
-.myTaskHeight{
-  height: 40vh;
-  overflow-y: auto;
-}
-.myTaskHeightParents{
-  height: 30vh;
-  overflow-y: auto;
-}
-.myTaskHeightStudent{
-  height: 52vh;
-  overflow-y: auto;
-}
+:where(.css-dev-only-do-not-override-14i19y2).ant-pagination .ant-pagination-item-active{ background-color: #241763 !important; color: #fff; border-color: #241763 !important;}
