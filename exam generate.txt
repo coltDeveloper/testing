@@ -1,0 +1,268 @@
+import React, { useState, useEffect } from "react";
+import { Checkbox, Select, message } from "antd";
+
+const { Option } = Select;
+
+const AddExamModal = () => {
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
+  const [randomQuestions, setRandomQuestions] = useState([]);
+  const [questionType, setQuestionType] = useState("question");
+  const [showGeneratedQuestions, setShowGeneratedQuestions] = useState(false);
+
+  const chapterQuestions = [
+    "Pakistan and the modern world",
+    "Whistling of Birds",
+    "My Bank Rob, August 14, 1947",
+    "My Grand Father",
+    "The Beauty Industry",
+    "The Eclipse",
+    "Take the Plunge",
+    "Walking on the Moon",
+    "The Eclipse",
+    "A Doctor Man of Science",
+  ];
+
+  const generatedQuestions = [
+    "Write a note on circumstances which led to the birth of Pakistan. Your note should not exceed 200 words.",
+    "To Liaquat Ali Khan, the demand for Pakistan was the most reasonable and entirely practicable.",
+    "What kind of similarity occurs between the beginning of Pakistan and the early days of America as pointed out by Liaquat Ali Khan?",
+    "How can America contribute to the development of Pakistan?",
+    "Do you think that Liaquat Ali Khan laid down the outline of Pakistan's foreign policy by visiting America in 1950?",
+    "The creation of Pakistan has by itself dissolved what would have been a perpetual danger zone in Asia. Write a note on it.",
+    "What are the views of Ali Khan on freedom?",
+    "Describe in brief the writer's comparison of the situation in England before, during, and after the solar eclipse.",
+    "Describe the experience and feelings of the people before and during the solar eclipse.",
+    "Describe the excitement and thrill of people going north.",
+    "Why does Virginia Woolf call the sun 'the flesh and blood of the world'?",
+    "Describe the condition of the world after the eclipse was over.",
+    "What is the purpose of the reference to Stonehenge in the paragraph?",
+    "Write a note on the two-nation theory.",
+    "In the light of Liaquat Ali Khan's speech, bring out two arguments for the creation of Pakistan.",
+    "How does Liaquat Ali Khan define the role of the western world, especially of America, in the promotion of world peace?",
+    "What were Liaquat Ali Khan's expectations from the western world?",
+    "How is the creation of Pakistan important for other Asian countries?",
+    "What, according to Liaquat Ali Khan, are the demands that our freedom makes on us?",
+    "Describe the difficulties faced by the people at the time of independence.",
+    "Describe the scene of the eclipse in the essay 'The Eclipse'.",
+    "Draw a graphic picture of the eclipse in your own words.",
+    "What was the mind of the people when they came to know about the solar eclipse?",
+    "What happens when the sun disappears?",
+    "What is the theme of the essay 'The Eclipse'?",
+    "What happens after the sun reappeared?",
+    "Write a note on the activity of the people before or after the solar eclipse."
+  ];
+  
+  const mcqQuestions = [
+    {
+      question: "What is the capital of Pakistan?",
+      options: ["Karachi", "Lahore", "Islamabad", "Peshawar"],
+      answer: "Islamabad"
+    },
+    {
+      question: "Who is the founder of Pakistan?",
+      options: ["Allama Iqbal", "Liaquat Ali Khan", "Quaid-e-Azam", "Fatima Jinnah"],
+      answer: "Quaid-e-Azam"
+    },
+    {
+      question: "What is the national language of Pakistan?",
+      options: ["Punjabi", "Sindhi", "Urdu", "Pashto"],
+      answer: "Urdu"
+    },
+    {
+      question: "Which is the largest province of Pakistan by area?",
+      options: ["Punjab", "Sindh", "Khyber Pakhtunkhwa", "Balochistan"],
+      answer: "Balochistan"
+    },
+    {
+      question: "What is the national flower of Pakistan?",
+      options: ["Rose", "Tulip", "Jasmine", "Sunflower"],
+      answer: "Jasmine"
+    },
+    {
+      question: "What is the national animal of Pakistan?",
+      options: ["Markhor", "Lion", "Tiger", "Elephant"],
+      answer: "Markhor"
+    },
+    {
+      question: "What is the national sport of Pakistan?",
+      options: ["Cricket", "Hockey", "Football", "Squash"],
+      answer: "Hockey"
+    },
+    {
+      question: "Which city is known as the 'City of Lights' in Pakistan?",
+      options: ["Lahore", "Karachi", "Islamabad", "Peshawar"],
+      answer: "Karachi"
+    },
+    {
+      question: "What is the highest military award of Pakistan?",
+      options: ["Nishan-e-Haider", "Sitara-e-Jurat", "Tamgha-e-Basalat", "Hilal-e-Imtiaz"],
+      answer: "Nishan-e-Haider"
+    },
+    {
+      question: "Which river is known as the lifeline of Pakistan?",
+      options: ["Indus", "Jhelum", "Chenab", "Ravi"],
+      answer: "Indus"
+    }
+  ];
+
+  useEffect(() => {
+    setSelectedQuestions(chapterQuestions);
+  }, []);
+
+  const handleRandomQuestion = () => {
+    const requiredQuestions = parseInt(document.getElementById("required-questions").value, 10);
+    const randomIndexes = [];
+    const questionsArray = questionType === "question" ? generatedQuestions : mcqQuestions.map(mcq => mcq.question);
+    while (randomIndexes.length < requiredQuestions) {
+      const randomIndex = Math.floor(Math.random() * questionsArray.length);
+      if (!randomIndexes.includes(randomIndex)) {
+        randomIndexes.push(randomIndex);
+      }
+    }
+    setRandomQuestions(randomIndexes.map(index => questionsArray[index]));
+  };
+
+  const handleQuestionClick = (question) => {
+    if (selectedQuestions.includes(question)) {
+      setSelectedQuestions((prev) => prev.filter((q) => q !== question));
+    } else {
+      setSelectedQuestions((prev) => [...prev, question]);
+    }
+  };
+
+  const handleGeneratedQuestionClick = (question) => {
+    const requiredQuestions = parseInt(document.getElementById("required-questions").value, 10);
+    if (randomQuestions.includes(question)) {
+      setRandomQuestions((prev) => prev.filter((q) => q !== question));
+    } else {
+      if (randomQuestions.length >= requiredQuestions) {
+        message.error("Limit full. Please remove a question before adding a new one.");
+      } else {
+        setRandomQuestions((prev) => [...prev, question]);
+      }
+    }
+  };
+
+  const handleSubmit = () => {
+    setShowGeneratedQuestions(true);
+  };
+
+  return (
+    <div className="exam-modal p-4 bg-white rounded-lg shadow-lg h-[80vh] overflow-y-auto">
+      <div className="question-list grid grid-cols-2 gap-4">
+        {chapterQuestions.map((question, index) => (
+          <div
+            key={index}
+            className="question-item flex items-center space-x-2"
+            onClick={() => handleQuestionClick(question)}
+          >
+            <Checkbox
+              checked={selectedQuestions.includes(question)}
+              onChange={() => handleQuestionClick(question)}
+            />
+            <span className="text-sm text-gray-700">{question}</span>
+          </div>
+        ))}
+      </div>
+      <div className="input-fields mt-4 grid grid-cols-2 gap-4">
+        <label className="flex flex-col text-sm text-gray-700">
+          Select Question Type:
+          <Select className="mt-1" placeholder="Select a type" onChange={(value) => setQuestionType(value)}>
+            <Option value="question">Question</Option>
+            <Option value="mcq">MCQ</Option>
+            <Option value="trueFalse">True/False</Option>
+          </Select>
+        </label>
+        <label className="flex flex-col text-sm text-gray-700">
+          Select Exam From:
+          <Select className="mt-1" placeholder="Select an exam">
+            <Option value="midterm">Midterm</Option>
+            <Option value="final">Final</Option>
+            <Option value="quiz">Quiz</Option>
+          </Select>
+        </label>
+        <label className="flex flex-col text-sm text-gray-700">
+          Required Questions:
+          <input id="required-questions" type="number" min="1" className="mt-1 p-2 border rounded" />
+        </label>
+        <label className="flex flex-col text-sm text-gray-700">
+          Each Question Marks:
+          <input type="number" min="1" className="mt-1 p-2 border rounded" />
+        </label>
+        <label className="flex flex-col text-sm text-gray-700">
+          Question Per Line:
+          <Select className="mt-1" placeholder="Select an option">
+            <Option value="1">1</Option>
+            <Option value="2">2</Option>
+          </Select>
+        </label>
+          <button 
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            onClick={handleSubmit}
+          >
+            Submit
+          </button>
+      </div>
+      {showGeneratedQuestions && (
+        <div className="generated-questions mt-4 h-96 overflow-y-auto">
+          <h5 className="text-lg font-bold text-gray-700">Generated Questions</h5>
+          <div>
+            {questionType === "question" ? (
+              generatedQuestions.map((question, index) => (
+                <p
+                  key={index}
+                  className={`text-sm text-gray-700 ${randomQuestions.includes(question) ? "bg-green-100" : ""}`}
+                  onClick={() => handleGeneratedQuestionClick(question)}
+                >
+                  {index + 1}. {question}
+                </p>
+              ))
+            ) : (
+              mcqQuestions.map((mcq, index) => (
+                <div key={index} className="mcq-item">
+                  <p
+                    className={`text-sm text-gray-700 ${randomQuestions.includes(mcq.question) ? "bg-green-100" : ""}`}
+                    onClick={() => handleGeneratedQuestionClick(mcq.question)}
+                  >
+                    {index + 1}. {mcq.question}
+                  </p>
+                  <ul className="ml-4">
+                    {mcq.options.map((option, i) => (
+                      <li key={i} className="text-sm text-gray-700">
+                        {String.fromCharCode(65 + i)}. {option}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="button-group mt-4 flex space-x-4">
+        <button
+          onClick={handleRandomQuestion}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Show Random Question
+        </button>
+      </div>
+      {randomQuestions.length > 0 && (
+        <div className="random-questions mt-4 p-2 bg-gray-100 rounded text-sm text-gray-700">
+          {randomQuestions.map((question, index) => (
+            <p
+              key={index}
+              className={`text-sm text-gray-700`}
+              onClick={() => handleQuestionClick(question)}
+            >
+              {index + 1}. {question}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AddExamModal;
