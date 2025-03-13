@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import FlexBtn from "../../Components/Common/FlexBtn";
 import ReactCustomDatePicker from "../../Components/Common/ReactCustomDatePicker";
 import { useNavigate } from "react-router-dom";
-import { message, Button, Progress, Tooltip, Upload } from "antd";
+import { message, Button, Upload } from "antd";
 import { UploadOutlined } from '@ant-design/icons';
 import { validator } from "../../Constant/validator";
 
