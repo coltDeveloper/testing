@@ -5,6 +5,7 @@ import { postRequest } from "../../services";
 import { VideoCameraOutlined, AudioOutlined, PauseOutlined, DeleteOutlined } from "@ant-design/icons"; 
 import { useNavigate } from "react-router-dom";
 import { attachmentSvg } from "../../Constant/svgs";
+import { message } from "antd";
 
 const Chatbot = () => {
 
@@ -68,7 +69,22 @@ const Chatbot = () => {
 
   const handleAudioClick = () => {
     if (!isRecording) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
+      // Check if mediaDevices API is supported
+      if (!navigator.mediaDevices?.getUserMedia) {
+        // Try fallback for older browsers
+        const getUserMedia = navigator.getUserMedia ||
+                           navigator.webkitGetUserMedia ||
+                           navigator.mozGetUserMedia ||
+                           navigator.msGetUserMedia;
+        
+        if (!getUserMedia) {
+          message.error("Audio recording is not supported on this device/browser");
+          return;
+        }
+      }
+
+      // Proceed with requesting audio access
+      navigator.mediaDevices?.getUserMedia({ audio: true })
         .then(stream => {
           const chunks = [];
           mediaRecorderRef.current = new MediaRecorder(stream);
@@ -84,7 +100,18 @@ const Chatbot = () => {
           setIsRecording(true);
           setIsAudioMode(true);
         })
-        .catch(error => console.error("Error accessing microphone:", error));
+        .catch(error => {
+          console.error("Error accessing microphone:", error);
+          if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            message.error("Microphone permission denied. Please allow microphone access to use this feature.");
+          } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+            message.error("No microphone found on your device");
+          } else {
+            message.error("Error accessing microphone. Please try again.");
+          }
+          setIsAudioMode(false);
+          setIsRecording(false);
+        });
     } else {
       if (mediaRecorderRef.current) {
         mediaRecorderRef.current.stop();
@@ -137,19 +164,92 @@ const Chatbot = () => {
 
   const handleCamera = async () => {
     try {
+      // First check if the device has a camera
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        message.error("Camera not found on your device");
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      // You might want to create a modal or separate component to show the camera stream
-      // For now, we'll just create a video element
-      const videoElement = document.createElement('video');
-      videoElement.srcObject = stream;
-      videoElement.play();
       
-      // Add logic to capture image from video stream
-      // This is just a basic example
-      const track = stream.getVideoTracks()[0];
-      track.stop();
-      setShowMediaOptions(false);
+      // Create a modal container
+      const modalContainer = document.createElement('div');
+      modalContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      `;
+
+      // Create video element
+      const videoElement = document.createElement('video');
+      videoElement.style.cssText = 'max-width: 90%; max-height: 70%;';
+      videoElement.autoplay = true;
+      videoElement.srcObject = stream;
+
+      // Create canvas (for capturing the image)
+      const canvas = document.createElement('canvas');
+
+      // Create capture button
+      const captureButton = document.createElement('button');
+      captureButton.textContent = 'Take Photo';
+      captureButton.style.cssText = `
+        margin-top: 20px;
+        padding: 10px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      `;
+
+      // Add elements to modal
+      modalContainer.appendChild(videoElement);
+      modalContainer.appendChild(captureButton);
+      document.body.appendChild(modalContainer);
+
+      // Handle capture click
+      captureButton.onclick = () => {
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        canvas.getContext('2d').drawImage(videoElement, 0, 0);
+        
+        // Convert to image URL
+        const imageUrl = canvas.toDataURL('image/jpeg');
+        
+        // Clean up
+        stream.getTracks().forEach(track => track.stop());
+        document.body.removeChild(modalContainer);
+        
+        // Send the captured image
+        handleSentMessage(imageUrl, "image");
+        setShowMediaOptions(false);
+      };
+
+      // Add close functionality (clicking outside)
+      modalContainer.onclick = (e) => {
+        if (e.target === modalContainer) {
+          stream.getTracks().forEach(track => track.stop());
+          document.body.removeChild(modalContainer);
+          setShowMediaOptions(false);
+        }
+      };
+
     } catch (error) {
+      if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        message.error("Camera not found on your device");
+      } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        message.error("Camera permission denied. Please allow camera access to use this feature.");
+      } else {
+        message.error("Error accessing camera: " + error.message);
+      }
       console.error("Error accessing camera:", error);
     }
   };
