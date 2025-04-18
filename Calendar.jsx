@@ -1,16 +1,16 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getRequest } from "../services";
+import { getRequest } from "../../services";
 import { useTranslation } from "react-i18next";
 import { Spin } from "antd";
+import { useChild } from "../../ContextAPI/ChildContext";
 
 const Calendar = () => {
   const [examData, setExamData] = useState([]);
   const [classData, setClassData] = useState([]);
   const [listWeek, setListWeek] = useState(0);
   const [loading, setLoading] = useState(true);
-  const auth = JSON.parse(localStorage.getItem("user"));
-  const user = auth.user;
+  const { selectedChildId } = useChild();
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language;
 
@@ -21,7 +21,7 @@ const Calendar = () => {
   useEffect(() => {
     const fetchStudent = async () => {
       try {
-        const response = await getRequest(`/api/User/GetUserById/${auth.userId}`);
+        const response = await getRequest(`/api/User/GetUserById/${selectedChildId}`);
         if (response.data.success) {
           return response.data.data.dokLevel;
         }
@@ -34,23 +34,36 @@ const Calendar = () => {
       try {
         setLoading(true);
         const studentDokLevel = await fetchStudent();
-
         const [examResponse, classResponse] = await Promise.all([
-          getRequest(user === "teacher" ? `/api/Exam/exams` : `/api/Exam/students-all-exams`),
-          getRequest(`/api/ClassAssignment/MyClasses`)
+          getRequest(`/api/Exam/students-all-exams-by-id?userId=${selectedChildId}`),
+          getRequest(`/api/ClassAssignment/ChildClassesById?userId=${selectedChildId}`)
         ]);
 
-        if(user !== "teacher" && studentDokLevel){
-          const filteredExams = examResponse.data.data.filter(exam => {
-            const examDokLevels = exam.dokLevel ? exam.dokLevel.split(',') : [];
-            return examDokLevels.includes(studentDokLevel);
-          });
-          setExamData(filteredExams);
-        } else {
-          setExamData(examResponse.data.data);
-        }
+        const filteredExams = examResponse.data.data.filter(exam => {
+          const examDokLevels = exam.dokLevel ? exam.dokLevel.split(',') : [];
+          return examDokLevels.includes(studentDokLevel);
+        });
+        setExamData(filteredExams);
 
-        setClassData(classResponse.data.data);
+        const uniqueClasses = {};
+        classResponse.data.data.forEach((cls) => {
+          if (!uniqueClasses[cls.classId]) {
+            uniqueClasses[cls.classId] = {
+              className: cls.className,
+              sectionName: cls.sectionName,
+              startedSession: cls.startedSession,
+              endSession: cls.endSession,
+              subjects: cls.subjects.map(subject => ({
+                subjectName: subject.subjectName,
+                schedules: subject.schedules.map(schedule => ({
+                  day: schedule.day,
+                  startTime: schedule.startTime,
+                }))
+              }))
+            };
+          }
+        });
+        setClassData(Object.values(uniqueClasses));
       } catch (error) {
         console.error("Error fetching data:", error.message);
       } finally {
@@ -59,7 +72,7 @@ const Calendar = () => {
     };
 
     fetchData();
-  }, []);
+  }, [selectedChildId]);
 
   const getTime = (startTimeString) => {
     const dummyDate = new Date(startTimeString);
